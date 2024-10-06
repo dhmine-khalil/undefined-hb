@@ -8,7 +8,7 @@ import (
 
 func TestMessageNotification(ctx iris.Context) {
 	data := map[string]string{
-		"url": "exp://192.168.30.24:19000/--/messages/2/TestNotification",
+		"url": "exp://192.168.100.3:19000/--/messages/2/TestNotification",
 	}
 
 	err := utils.SendNotification(
