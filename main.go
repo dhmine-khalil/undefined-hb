@@ -4,21 +4,22 @@ import (
 	"habitat-server/routes"
 	"habitat-server/storage"
 	"habitat-server/utils"
+	"log"
 
 	"os"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/joho/godotenv"
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/middleware/jwt"
 )
 
 
 func main() {
-	godotenv.Load()
 	storage.InitializeDB()
 	storage.InitializeStorage(storage.DB)
 	storage.InitializeRedis()
+
+
 
 
 	app := iris.Default()
@@ -106,6 +107,13 @@ func main() {
 	}
 	app.Post("/api/refresh", refreshTokenVerifierMiddleware, utils.RefreshToken)
 
-	app.Listen(":4000")
+	// app.Listen(":4000")
 
+	port := os.Getenv("PORT")
+
+	if port == "" {
+		port = "3000"
+
+		log.Fatal((app.Listen("0.0.0.0:" + port)))
+	}
 }
