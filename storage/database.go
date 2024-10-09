@@ -18,11 +18,15 @@
 // 		panic("Error loading .env file")
 // 	}
 
-// 	dsn := os.Getenv("DB_CONNECTION_STRING")
+// 	dsn := os.Getenv("DATABASE_URL")
 // 	db, dbError := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 // 	if dbError != nil {
 // 		log.Panic("error connection to db")
 // 	}
+// 	if err != nil {
+//         log.Printf("[error] failed to initialize database, got error %v", err)
+//         log.Panic("error connection to db")
+//     }
 
 // 	DB = db
 // 	return db
@@ -52,31 +56,41 @@ import (
 	"log"
 	"os"
 
+	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
 var DB *gorm.DB
 
-// connectToDB connects to the database using the connection string from the environment variable.
 func connectToDB() *gorm.DB {
-	dsn := os.Getenv("DB_CONNECTION_STRING")
-	if dsn == "" {
-		log.Panic("DB_CONNECTION_STRING environment variable is not set")
+	// Load the .env file
+	err := godotenv.Load()
+	if err != nil {
+		log.Panic("Error loading .env file")
 	}
 
+	// Get the database URL
+	dsn := os.Getenv("DATABASE_URL")
+	if dsn == "" {
+		log.Panic("DATABASE_URL is not set in the environment variables")
+	}
+
+	// Connect to the database
 	db, dbError := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if dbError != nil {
-		log.Panic("failed to connect to the database:", dbError)
+		log.Printf("[error] failed to initialize database, got error %v", dbError)
+		log.Panic("Error connecting to the database")
 	}
 
+	// Assign the db to the global variable
 	DB = db
 	return db
 }
 
-// performMigrations applies the necessary migrations to the database.
 func performMigrations(db *gorm.DB) {
-	err := db.AutoMigrate(
+	// Perform database migrations
+	db.AutoMigrate(
 		&models.Conversation{},
 		&models.Message{},
 		&models.User{},
@@ -84,14 +98,12 @@ func performMigrations(db *gorm.DB) {
 		&models.Review{},
 		&models.Apartment{},
 	)
-	if err != nil {
-		log.Panic("failed to perform migrations:", err)
-	}
 }
 
-// InitializeDB initializes the database connection and performs migrations.
 func InitializeDB() *gorm.DB {
 	db := connectToDB()
 	performMigrations(db)
 	return db
 }
+
+

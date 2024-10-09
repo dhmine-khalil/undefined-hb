@@ -17,4 +17,5 @@ type User struct {
 	SavedProperties     datatypes.JSON `json:"savedProperties"`
 	PushTokens          datatypes.JSON `json:"pushTokens"`
 	AllowsNotifications *bool          `json:"allowsNotifications"`
+	isVerified *bool `json:"isVerified"`
 }

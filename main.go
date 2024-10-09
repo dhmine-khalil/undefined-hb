@@ -4,7 +4,6 @@ import (
 	"habitat-server/routes"
 	"habitat-server/storage"
 	"habitat-server/utils"
-	"log"
 
 	"os"
 
@@ -107,13 +106,17 @@ func main() {
 	}
 	app.Post("/api/refresh", refreshTokenVerifierMiddleware, utils.RefreshToken)
 
-	// app.Listen(":4000")
+	app.Listen(":4000")
 
-	port := os.Getenv("PORT")
-
-	if port == "" {
-		port = "3000"
-
-		log.Fatal((app.Listen("0.0.0.0:" + port)))
+	reservation := app.Party("/api/reservation")
+	{
+		reservation.Post("/", accessTokenVerifierMiddleware, routes.CreateReservation)
+		reservation.Get("/{id}", accessTokenVerifierMiddleware, routes.GetReservation)
+		reservation.Get("/user", accessTokenVerifierMiddleware, routes.GetReservationsByUserID)
+		reservation.Get("/property/{id}", accessTokenVerifierMiddleware, routes.GetReservationsByPropertyID)
+		reservation.Patch("/{id}", accessTokenVerifierMiddleware, routes.UpdateReservation)
+		reservation.Delete("/{id}", accessTokenVerifierMiddleware, routes.DeleteReservation)
 	}
+
+	
 }
