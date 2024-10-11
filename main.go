@@ -106,17 +106,16 @@ func main() {
 	}
 	app.Post("/api/refresh", refreshTokenVerifierMiddleware, utils.RefreshToken)
 
+	reservation := app.Party("/api/reservation")
+    {
+        reservation.Post("/", accessTokenVerifierMiddleware, utils.UserIDMiddleware, routes.CreateReservation)
+        reservation.Get("/{id}", accessTokenVerifierMiddleware, utils.UserIDMiddleware, routes.GetReservation)
+        reservation.Get("/user", accessTokenVerifierMiddleware, utils.UserIDMiddleware, routes.GetReservationsByUserID)
+        reservation.Put("/{id}", accessTokenVerifierMiddleware, utils.UserIDMiddleware, routes.UpdateReservation)
+        reservation.Delete("/{id}", accessTokenVerifierMiddleware, utils.UserIDMiddleware, routes.DeleteReservation)
+    }
 	app.Listen(":4000")
 
-	reservation := app.Party("/api/reservation")
-	{
-		reservation.Post("/", accessTokenVerifierMiddleware, routes.CreateReservation)
-		reservation.Get("/{id}", accessTokenVerifierMiddleware, routes.GetReservation)
-		reservation.Get("/user", accessTokenVerifierMiddleware, routes.GetReservationsByUserID)
-		reservation.Get("/property/{id}", accessTokenVerifierMiddleware, routes.GetReservationsByPropertyID)
-		reservation.Patch("/{id}", accessTokenVerifierMiddleware, routes.UpdateReservation)
-		reservation.Delete("/{id}", accessTokenVerifierMiddleware, routes.DeleteReservation)
-	}
 
 	
 }

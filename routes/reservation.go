@@ -36,6 +36,7 @@ func CreateReservation(ctx iris.Context) {
     }
 
     reservation.Status = "pending"
+    reservation.PaymentStatus = "pending"
     reservation.TotalPrice = calculateTotalPrice(&reservation)
 
     if err := storage.DB.Create(&reservation).Error; err != nil {
@@ -84,24 +85,6 @@ func GetReservationsByUserID(ctx iris.Context) {
     ctx.JSON(reservations)
 }
 
-func GetReservationsByPropertyID(ctx iris.Context) {
-    propertyID, err := ctx.Params().GetUint("id")
-    if err != nil {
-        ctx.StatusCode(http.StatusBadRequest)
-        ctx.JSON(iris.Map{"error": "Invalid property ID"})
-        return
-    }
-
-    var reservations []models.Reservation
-    if err := storage.DB.Where("property_id = ?", propertyID).Preload("User").Find(&reservations).Error; err != nil {
-        ctx.StatusCode(http.StatusInternalServerError)
-        ctx.JSON(iris.Map{"error": "Failed to retrieve reservations"})
-        return
-    }
-
-    ctx.JSON(reservations)
-}
-
 func UpdateReservation(ctx iris.Context) {
     id := ctx.Params().GetUintDefault("id", 0)
     if id == 0 {
@@ -130,9 +113,12 @@ func UpdateReservation(ctx iris.Context) {
     }
 
     var updateData struct {
-        StartDate time.Time `json:"startDate"`
-        EndDate   time.Time `json:"endDate"`
-        Status    string    `json:"status"`
+        StartDate       time.Time `json:"startDate"`
+        EndDate         time.Time `json:"endDate"`
+        Status          string    `json:"status"`
+        PaymentStatus   string    `json:"paymentStatus"`
+        GuestCount      int       `json:"guestCount"`
+        SpecialRequests string    `json:"specialRequests"`
     }
 
     if err := ctx.ReadJSON(&updateData); err != nil {
@@ -149,6 +135,15 @@ func UpdateReservation(ctx iris.Context) {
     }
     if updateData.Status != "" {
         reservation.Status = updateData.Status
+    }
+    if updateData.PaymentStatus != "" {
+        reservation.PaymentStatus = updateData.PaymentStatus
+    }
+    if updateData.GuestCount != 0 {
+        reservation.GuestCount = updateData.GuestCount
+    }
+    if updateData.SpecialRequests != "" {
+        reservation.SpecialRequests = updateData.SpecialRequests
     }
 
     if err := validateReservation(&reservation); err != nil {
@@ -216,6 +211,9 @@ func validateReservation(reservation *models.Reservation) error {
     }
     if reservation.StartDate.Before(time.Now()) {
         return fmt.Errorf("start date must be in the future")
+    }
+    if reservation.GuestCount <= 0 {
+        return fmt.Errorf("guest count must be greater than 0")
     }
     return nil
 }

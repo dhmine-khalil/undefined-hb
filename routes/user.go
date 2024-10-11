@@ -47,11 +47,13 @@ func Register(ctx iris.Context) {
 	}
 
 	newUser = models.User{
-		FirstName:   userInput.FirstName,
-		LastName:    userInput.LastName,
-		Email:       strings.ToLower(userInput.Email),
-		Password:    hashedPassword,
-		SocialLogin: false}
+		FirstName:      userInput.FirstName,
+		LastName:       userInput.LastName,
+		Email:          strings.ToLower(userInput.Email),
+		Password:       hashedPassword,
+		SocialLogin:    false,
+		MembershipTier: models.FreeTier, // Set default tier to Free
+	}
 
 	storage.DB.Create(&newUser)
 
@@ -637,8 +639,41 @@ func returnUser(user models.User, ctx iris.Context) {
 		"allowsNotifications": user.AllowsNotifications,
 		"accessToken":         string(tokenPair.AccessToken),
 		"refreshToken":        string(tokenPair.RefreshToken),
+		"membershipTier":      user.MembershipTier,
 	})
 
+}
+
+func UpdateMembershipTier(ctx iris.Context) {
+	params := ctx.Params()
+	id := params.Get("id")
+
+	user := getUserByID(id, ctx)
+	if user == nil {
+		return
+	}
+
+	var req UpdateMembershipTierInput
+	err := ctx.ReadJSON(&req)
+	if err != nil {
+		utils.HandleValidationErrors(err, ctx)
+		return
+	}
+
+	user.MembershipTier = req.MembershipTier
+
+	rowsUpdated := storage.DB.Model(&user).Updates(user)
+
+	if rowsUpdated.Error != nil {
+		utils.CreateInternalServerError(ctx)
+		return
+	}
+
+	ctx.StatusCode(iris.StatusNoContent)
+}
+
+type UpdateMembershipTierInput struct {
+	MembershipTier models.MembershipTier `json:"membershipTier" validate:"required,oneof=Free Premium Pro"`
 }
 
 type RegisterUserInput struct {
